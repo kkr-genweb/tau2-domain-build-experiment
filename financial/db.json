@@ -1,0 +1,43 @@
+{
+  "customers": {
+    "cust_1": {
+      "customer_id": "cust_1",
+      "name": "John Doe",
+      "address": "123 Main St, Anytown, USA",
+      "email": "john.doe@email.com",
+      "phone": "123-456-7890"
+    },
+    "cust_2": {
+      "customer_id": "cust_2",
+      "name": "Jane Smith",
+      "address": "456 Oak Ave, Anytown, USA",
+      "email": "jane.smith@email.com",
+      "phone": "098-765-4321"
+    }
+  },
+  "accounts": {
+    "acc_1": {
+      "account_id": "acc_1",
+      "customer_id": "cust_1",
+      "account_type": "checking",
+      "balance": 10000.0,
+      "currency": "USD"
+    },
+    "acc_2": {
+      "account_id": "acc_2",
+      "customer_id": "cust_2",
+      "account_type": "savings",
+      "balance": 50000.0,
+      "currency": "USD"
+    },
+    "acc_3": {
+        "account_id": "acc_3",
+        "customer_id": "cust_2",
+        "account_type": "checking",
+        "balance": 25000.0,
+        "currency": "EUR"
+    }
+  },
+  "transactions": {},
+  "swift_messages": {}
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "task_id": "financial-0",
+    "goal": "Create a transaction of 1000 USD from account acc_1 to account acc_2, and then clear the transaction.",
+    "user_dialogue": [
+      {
+        "role": "user",
+        "content": "I need to send 1000 USD from my checking account (acc_1) to Jane Smith's savings account (acc_2)."
+      }
+    ]
+  }
+]
