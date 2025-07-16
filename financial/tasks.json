@@ -8,5 +8,35 @@
         "content": "I need to send 1000 USD from my checking account (acc_1) to Jane Smith's savings account (acc_2)."
       }
     ]
+  },
+  {
+    "task_id": "financial-1",
+    "goal": "Check the account balance for acc_1 and list all transactions for that account.",
+    "user_dialogue": [
+      {
+        "role": "user",
+        "content": "Can you check my account balance for acc_1 and show me all transactions?"
+      }
+    ]
+  },
+  {
+    "task_id": "financial-2",
+    "goal": "Create a SWIFT message and flag a transaction for fraud detection.",
+    "user_dialogue": [
+      {
+        "role": "user",
+        "content": "I need to create a SWIFT MT103 message for a wire transfer and flag transaction txn_123 as potentially fraudulent."
+      }
+    ]
+  },
+  {
+    "task_id": "financial-3",
+    "goal": "Get customer details and list all their accounts.",
+    "user_dialogue": [
+      {
+        "role": "user",
+        "content": "Can you get the details for customer cust_1 and show me all their accounts?"
+      }
+    ]
   }
 ]

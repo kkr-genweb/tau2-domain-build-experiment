@@ -9,12 +9,17 @@ A new domain should have the following directory structure:
 ```
 <domain_name>/
 ├── data_model.py
-├── db.json
+├── db.json (or db.toml for complex data)
 ├── environment.py
 ├── policy.md
+├── policy_solo.md (optional - for solo mode support)
 ├── tasks.json
-└── tools.py
+├── tools.py
+├── utils.py
+└── test_tools_<domain_name>.py (recommended)
 ```
+
+**Note:** Some domains may have additional files like user-specific models, workflows, or manuals depending on complexity.
 
 ## File Contents
 
@@ -24,6 +29,9 @@ This file defines the data structures and models for the domain using `pydantic`
 
 ```python
 from typing import Annotated, Any, Dict, List, Literal, Optional, Union
+import datetime  # Add if using date/time fields
+import uuid  # Add if generating UUIDs
+from enum import Enum  # Add if using enums
 
 from pydantic import BaseModel, Field
 
@@ -53,6 +61,7 @@ class Transaction(BaseModel):
 class <DomainName>DB(DB):
     """Database of all customers, accounts, and transactions."""
 
+    # Choose Dict[str, Model] for indexed access or List[Model] for sequential access
     customers: Dict[str, Customer] = Field(
         description="Dictionary of all customers indexed by customer ID"
     )
@@ -86,6 +95,7 @@ This file implements the tools and functions that can be used to interact with t
 
 ```python
 from typing import List, Optional
+import uuid  # Add if generating UUIDs
 
 from tau2.domains.<domain_name>.data_model import (
     <DomainName>DB,
@@ -103,23 +113,66 @@ class <DomainName>Tools(ToolKitBase):
     def __init__(self, db: <DomainName>DB) -> None:
         super().__init__(db)
 
+    # Helper methods for getting entities (recommended pattern)
+    def _get_customer(self, customer_id: str) -> Customer:
+        """Get customer from database."""
+        if customer_id not in self.db.customers:
+            raise ValueError(f"Customer {customer_id} not found")
+        return self.db.customers[customer_id]
+
+    def _get_account(self, account_id: str) -> Account:
+        """Get account from database."""
+        if account_id not in self.db.accounts:
+            raise ValueError(f"Account {account_id} not found")
+        return self.db.accounts[account_id]
+
     # Define your tools here.
     # For example:
 
     @is_tool(ToolType.READ)
     def get_customer_details(self, customer_id: str) -> Customer:
-        """Get the details of a customer."""
-        if customer_id not in self.db.customers:
-            raise ValueError(f"Customer {customer_id} not found")
-        return self.db.customers[customer_id]
+        """
+        Get the details of a customer.
+        
+        Args:
+            customer_id: The ID of the customer to get details for.
+            
+        Returns:
+            The customer details.
+        """
+        return self._get_customer(customer_id)
 
     @is_tool(ToolType.WRITE)
     def create_transaction(
         self, account_id: str, amount: float
     ) -> Transaction:
-        """Create a new transaction."""
-        # ... implementation for creating a transaction
-        pass
+        """
+        Create a new transaction.
+        
+        Args:
+            account_id: The ID of the account for the transaction.
+            amount: The transaction amount.
+            
+        Returns:
+            The created transaction.
+        """
+        # Validate account exists
+        account = self._get_account(account_id)
+        
+        # Generate unique ID
+        transaction_id = str(uuid.uuid4())
+        
+        # Create transaction
+        transaction = Transaction(
+            transaction_id=transaction_id,
+            account_id=account_id,
+            amount=amount,
+            # ... other fields
+        )
+        
+        # Store in database
+        self.db.transactions[transaction_id] = transaction
+        return transaction
 ```
 
 ### `policy.md`
@@ -226,8 +279,62 @@ This file contains utility functions and constants for the domain.
 from pathlib import Path
 
 <DOMAIN_NAME>_ROOT_PATH = Path(__file__).parent
-<DOMAIN_NAME>_DB_PATH = <DOMAIN_NAME>_ROOT_PATH / "db.json"
+<DOMAIN_NAME>_DB_PATH = <DOMAIN_NAME>_ROOT_PATH / "db.json"  # or "db.toml" for complex data
 <DOMAIN_NAME>_POLICY_PATH = <DOMAIN_NAME>_ROOT_PATH / "policy.md"
 <DOMAIN_NAME>_TASK_SET_PATH = <DOMAIN_NAME>_ROOT_PATH / "tasks.json"
+
+```
+
+## Testing
+
+### `test_tools_<domain_name>.py`
+
+This file contains unit tests for the domain tools (recommended for quality assurance).
+
+```python
+import pytest
+from tau2.domains.<domain_name>.data_model import <DomainName>DB, Customer, Account, Transaction
+from tau2.domains.<domain_name>.tools import <DomainName>Tools
+
+class Test<DomainName>Tools:
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.db = <DomainName>DB(
+            customers={
+                "cust_1": Customer(
+                    customer_id="cust_1",
+                    name="Test Customer",
+                    # ... other fields
+                )
+            },
+            accounts={
+                "acc_1": Account(
+                    account_id="acc_1",
+                    customer_id="cust_1",
+                    balance=1000.0,
+                    # ... other fields
+                )
+            },
+            transactions={}
+        )
+        self.tools = <DomainName>Tools(self.db)
+
+    def test_get_customer_details(self):
+        """Test getting customer details."""
+        customer = self.tools.get_customer_details("cust_1")
+        assert customer.customer_id == "cust_1"
+        assert customer.name == "Test Customer"
+
+    def test_get_customer_details_not_found(self):
+        """Test getting non-existent customer."""
+        with pytest.raises(ValueError, match="Customer not_found not found"):
+            self.tools.get_customer_details("not_found")
+
+    def test_create_transaction(self):
+        """Test creating a transaction."""
+        transaction = self.tools.create_transaction("acc_1", 100.0)
+        assert transaction.account_id == "acc_1"
+        assert transaction.amount == 100.0
+        assert transaction.transaction_id in self.db.transactions
 
 ```
